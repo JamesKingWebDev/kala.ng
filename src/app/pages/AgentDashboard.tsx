@@ -320,6 +320,7 @@ export default function AgentDashboard() {
   };
 
   const handlePaystackPayment = (plan: (typeof PLANS)[0]) => {
+    console.log("Subscribe clicked", plan);
     if (!agent && !profileData.email) return;
     if (!window.PaystackPop) {
       alert(
@@ -331,26 +332,55 @@ export default function AgentDashboard() {
     setPayingPlan(plan.id);
     const ref = `logcon_${plan.id}_${Date.now()}`;
 
+    console.log(PAYSTACK_PUBLIC_KEY);
+    console.log(email);
+    console.log(typeof window.PaystackPop);
+    console.log(typeof window.PaystackPop.setup);
     const handler = window.PaystackPop.setup({
       key: PAYSTACK_PUBLIC_KEY,
       email: email,
       amount: plan.amount,
       currency: "NGN",
       ref,
-      callback: async (response) => {
-        try {
-          await paymentApi.verifyPaystack(
-            response.reference,
-            email,
-            plan.id,
-          );
-          await fetchPaymentStatus(email);
-        } catch {
-          // Payment recorded locally if backend is down
-        } finally {
-          setPayingPlan(null);
-        }
-      },
+      callback: function (response) {
+
+        (async () => {
+            try {
+
+                await paymentApi.verifyPaystack(
+                    response.reference,
+                    email,
+                    plan.id
+                );
+
+                await fetchPaymentStatus(email);
+
+            } catch (err) {
+
+                console.error(err);
+
+            } finally {
+
+                setPayingPlan(null);
+
+            }
+        })();
+
+    },
+      // callback: async (response) => {
+      //   try {
+      //     await paymentApi.verifyPaystack(
+      //       response.reference,
+      //       email,
+      //       plan.id,
+      //     );
+      //     await fetchPaymentStatus(email);
+      //   } catch {
+      //     // Payment recorded locally if backend is down
+      //   } finally {
+      //     setPayingPlan(null);
+      //   }
+      // },
       onClose: () => {
         setPayingPlan(null);
       },
